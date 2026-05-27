@@ -42,6 +42,10 @@ def get_user_name():
     return "Unknown User"
 
 def upload_result(result_df, uid=None):
+    if os.getenv('SKIP_FIREBASE_UPLOAD') == 'True':
+        print("Skipping individual Firebase upload as requested by coordinator.")
+        return
+
     if result_df.empty:
         print("No predictions to upload.")
         return
@@ -51,6 +55,7 @@ def upload_result(result_df, uid=None):
         latest_data = result_df.iloc[-1].to_dict()
         
         filtered_data = {
+            'User_Name': get_user_name(),
             'Stress_Status': latest_data.get('Stress_Status'),
             'Predicted_Label': latest_data.get('Predicted_Label')
         }
