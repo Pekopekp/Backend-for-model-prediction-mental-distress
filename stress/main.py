@@ -12,14 +12,15 @@ from firebase_upload import upload_result, fetch_user_id
 
 def setup_folders():
     text_dir = '../text file'
+    sub_dir = os.getenv('USER_DATA_SUBDIR', '')
+    data_dir = os.path.join('data', sub_dir) if sub_dir else 'data'
     folders = [
-        'data/raw',
-        'data/processed',
-        'data/predictions',
+        os.path.join(data_dir, 'raw'),
+        os.path.join(data_dir, 'processed'),
+        os.path.join(data_dir, 'predictions'),
         'models',
         'firebase',
-        text_dir,
-        f'{text_dir}/stress'
+        text_dir
     ]
     for folder in folders:
         os.makedirs(folder, exist_ok=True)
@@ -31,7 +32,6 @@ if __name__ == "__main__":
     get_user_info()
     
     text_dir = "../text file"
-    output_dir = "../text file/stress"
     
     txt_files = [f for f in os.listdir(text_dir) if f.endswith('.txt')]
     if not txt_files:
@@ -47,20 +47,26 @@ if __name__ == "__main__":
     
     print(f"\nUsing input file: {input_file}")
     
+    sub_dir = os.getenv('USER_DATA_SUBDIR', '')
+    data_dir = os.path.join('data', sub_dir) if sub_dir else 'data'
+    
     print("\nSTEP 2 - Convert TXT to CSV")
-    cleaned_csv = "data/cleaned_output.csv"
+    cleaned_csv = os.path.join(data_dir, "cleaned_output.csv")
     convert_and_clean_txt(input_file=input_file, output_file=cleaned_csv)
     
     print("\nSTEP 3 - Preprocess")
-    processed_df = preprocess_data(cleaned_csv)
+    processed_csv_path = os.path.join(data_dir, "processed/processed_data.csv")
+    processed_df = preprocess_data(cleaned_csv, output_path=processed_csv_path)
     
     if not processed_df.empty:
         print("\nSTEP 4 - Feature Extraction (with Neurokit2)")
-        feature_df = extract_features(processed_df)
+        features_csv_path = os.path.join(data_dir, "processed/features.csv")
+        feature_df = extract_features(processed_df, output_path=features_csv_path)
         
         if not feature_df.empty:
             print("\nSTEP 5 - Prediction (with Scaler)")
-            result_df = predict_stress(feature_df)
+            predictions_csv_path = os.path.join(data_dir, "predictions/final_predictions.csv")
+            result_df = predict_stress(feature_df, output_path=predictions_csv_path)
             
             if not result_df.empty:
                 print("Prediction Summary:")
